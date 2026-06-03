@@ -21,7 +21,11 @@ require(yaml)
 
 # Title Page
 
-Include your names
+Diana
+Ernest
+Sofiia
+Victoria
+Yurii
 
 Include the tutorial group number
 
@@ -34,12 +38,14 @@ Simon Loop
 Use APA referencing throughout your document. [Here's a link to some explanation.](https://www.mendeley.com/guides/apa-citation-guide/)
 
 ## 1.1 Describe the Social Problem
+Education and Income Inequality in the Netherlands
 
+To what extent is educational attainment associated with income inequality across Dutch municipalities?
+
+Why this is a social problem:
+
+Education is often viewed as a pathway to economic opportunity. If municipalities with lower educational attainment also experience greater inequality, it suggests unequal access to opportunities and social mobility.
 Include the following:
-
--   Why is this relevant?
-
--   ...
 
 # Part 2 - Data Sourcing
 
