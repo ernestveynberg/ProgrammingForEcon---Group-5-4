@@ -11,12 +11,16 @@ output: pdf_document
 install.packages("tidyverse")
 install.packages("yaml")
 install.packages("rmarkdown")
+install.packages("cbsodataR")
 ```
 
+
 ```{r packages}
-require(tidyverse)
-require(rmarkdown)
-require(yaml)
+library(tidyverse)
+library(readr)
+library(rmarkdown)
+library(yaml)
+library(cbsodataR)
 ```
 
 # Title Page
@@ -54,7 +58,15 @@ Include the following:
 Preferably from a URL, but if not, make sure to download the data and store it in a shared location that you can load the data in from. Do not store the data in a folder you include in the Github repository!
 
 ```{r loading_data}
-dataset <- midwest
+
+employment_tables <- cbs_search("arbeidsverleden")
+education_tables <- cbs_search("onderwijs")
+
+arbeidsverleden <- cbs_get_data("86219NED")
+onderwijs <- cbs_get_data("85525NED")
+
+
+
 ```
 
 midwest is an example dataset included in the tidyverse package
