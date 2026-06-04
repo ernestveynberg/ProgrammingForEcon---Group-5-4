@@ -73,13 +73,15 @@ data.onderwijs <- read.csv("data/onderwijs.csv")
 ```{r}
 head(data.onderwijs)
 ```
-```{r}
-head(data.inkomen)
-```
+
 ### Dataset 1: Educational Attainment (85525NED)
 
 The dataset "Bevolking; hoogstbehaald onderwijsniveau en regio" contains information on the highest educational attainment of people aged 15–75 in the Netherlands, broken down by region, gender, age group, and year. The data are collected by Statistics Netherlands (CBS) and are available from 2013–2024. The unit of observation is a combination of region and year. Key variables include the percentage of people with low education (primary education, VMBO, MBO1), medium education (HAVO, VWO, MBO2-4), and higher education (HBO, WO). 
 For this project, the share of highly educated people is the most relevant variable, as it can be compared with regional income levels. A limitation of the dataset is that it contains aggregated regional statistics rather than individual-level data, so relationships observed across regions may not necessarily apply to individuals.
+
+```{r}
+head(data.inkomen)
+```
 
 ### Dataset 2: Personal Income (86162NED)
 
@@ -97,28 +99,79 @@ For our analysis, the most relevant variable is median personal income or averag
 ###
 These datasets can be merged using the region (RegioS) and year (Perioden) variables, allowing us to examine the relationship between educational attainment and personal income across Dutch regions.
 
+| Dataset | Unit of observation | Key variables | Source |
+|----------|----------|----------|----------|
+| Onderwijs (85525NED) | One Dutch region in one year | Region, year, population size, share low education, share medium education, share high education | Statistics Netherlands (CBS StatLine), 2013–2024 |
+| Inkomen (86162NED) | One Dutch region in one year | Region, year, average personal income, median personal income, number of persons with income | Statistics Netherlands (CBS StatLine), 2011–2024 |
+
 ``` r
 inline_code = TRUE
 ```
 
 ## 2.3 Describe the type of variables included
 
-Think of things like:
+Educational Attainment Dataset (data.onderwijs) (85525NED)
 
--   Do the variables contain health information or SES information?
+This dataset primarily contains socio-economic status (SES) information, as educational attainment is a common indicator of an individual's socio-economic position. The dataset includes variables on the highest completed level of education, population counts, age groups, gender, region, and year.
 
--   Have they been measured by interviewing individuals or is the data coming from administrative sources?
+The data are obtained from administrative sources and registers maintained by Statistics Netherlands (CBS). Educational attainment is compiled using information from educational institutions and government records. The dataset is aggregated at the regional level, meaning that it reports percentages and population counts for groups rather than information on individual persons.
 
-*For the sake of this example, I will continue with the assignment...*
+Income of Persons Dataset (data.inkomen) (86162NED)
+
+The variables in this dataset mainly contain socio-economic status (SES) information, as they measure personal income levels across different regions and population groups. Key variables include average personal income, median personal income, the number of persons with income, region, year, gender, and other demographic characteristics.
+
+The data are derived from administrative sources, such as tax records and social security registers, and are compiled by Statistics Netherlands (CBS). The information is therefore not collected through surveys or interviews. The dataset is aggregated by region and demographic group, meaning that it provides summary statistics rather than individual-level income data.
 
 # Part 3 - Quantifying
 
+
 ## 3.1 Data cleaning
 
-Say we want to include only larger distances (above 2) in our dataset, we can filter for this.
+we want to choose ages groups 25-45, keeping all the periods. We will merge the datasets by: regions, year, age group and gender. We also filtering the data to only provinces: 12 observations.
+data.onderwijs: Age groups to: 53500 (25-35) 53700 (35-45)
+
+> head(inkomen_2545)
+
+data.inkomen: age groups to: 53050 (25-45), regios: LD, PV, GM0363, all periods, variables:        MediaanPersoonlijkInkomen_7,GemiddeldPersoonlijkInkomen_6
+becomes clean dataset:
+
+> head(inkomen_clean)
 
 ```{r data_cleaning}
-mean(dataset$percollege)
+
+###new name 
+
+head(inkomen_2545)
+
+inkomen_2545 <- data.inkomen %>%
+  mutate(Persoonskenmerken = trimws(as.character(Persoonskenmerken))) %>%
+  filter(Persoonskenmerken == "53050") %>%
+  select(
+    RegioS,
+    Perioden,
+    MediaanPersoonlijkInkomen_7,
+    GemiddeldPersoonlijkInkomen_6
+  )
+
+library(dplyr)
+
+inkomen_clean <- inkomen_2545 %>%
+  filter(
+    grepl("^LD", RegioS) |
+    grepl("^PV", RegioS) |
+    RegioS == "GM0363"
+  )
+> inkomen_clean <- inkomen_clean %>%
++     select(-Region.x) %>%
++     rename(Region = Region.y)
+> inkomen_clean <- inkomen_clean %>%
++     rename(
++         region_code = RegioS,
++         year = Perioden,
++         median_income = MediaanPersoonlijkInkomen_7,
++         average_income = GemiddeldPersoonlijkInkomen_6,
++         region = Region
++     )
 ```
 
 Please use a separate 'R block' of code for each type of cleaning. So, e.g. one for missing values, a new one for removing unnecessary variables etc.
