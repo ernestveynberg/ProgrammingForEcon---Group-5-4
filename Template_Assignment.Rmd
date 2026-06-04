@@ -60,7 +60,7 @@ Preferably from a URL, but if not, make sure to download the data and store it i
 ```{r loading_data}
 
 #onderwijs <- cbs_get_data("85525NED")
-#inkomen <- cbs_get_data("84494NED")
+#inkomen <- cbs_get_data("86162NED")
 
 #write_csv(onderwijs, "data/onderwijs.csv")
 #write_csv(inkomen, "data/inkomen.csv")
@@ -71,19 +71,37 @@ data.onderwijs <- read.csv("data/onderwijs.csv")
 ```
 
 
-## 2.2 Provide a short summary of the dataset(s)
-
+## 2.2 Short summary of the dataset(s)
 ```{r}
-head(dataset)
+head(data.onderwijs)
 ```
+```{r}
+head(data.inkomen)
+```
+### Dataset 1: Educational Attainment (85525NED)
 
-In this case we see 28 variables, but we miss some information on what units they are in. We also don't know anything about the year/moment in which this data has been captured.
+The dataset "Bevolking; hoogstbehaald onderwijsniveau en regio" contains information on the highest educational attainment of people aged 15–75 in the Netherlands, broken down by region, gender, age group, and year. The data are collected by Statistics Netherlands (CBS) and are available from 2013–2024. The unit of observation is a combination of region and year. Key variables include the percentage of people with low education (primary education, VMBO, MBO1), medium education (HAVO, VWO, MBO2-4), and higher education (HBO, WO). 
+For this project, the share of highly educated people is the most relevant variable, as it can be compared with regional income levels. A limitation of the dataset is that it contains aggregated regional statistics rather than individual-level data, so relationships observed across regions may not necessarily apply to individuals.
+
+### Dataset 2: Personal Income (86162NED)
+
+The dataset "Inkomen van personen; persoonskenmerken, regio" (CBS) contains information on personal income by region and demographic characteristics in the Netherlands. The unit of observation is a combination of region, year, gender, and personal characteristics.
+
+Key variables include:
+- RegioS: region code
+- Perioden: year
+- GemiddeldPersoonlijkInkomen: average personal income (1,000 euros)
+- MediaanPersoonlijkInkomen: median personal income (1,000 euros)
+
+The dataset covers the period 2011–2024. Figures for 2024 are provisional. A limitation of the dataset is that it contains aggregated regional data rather than individual-level observations.
+For our analysis, the most relevant variable is median personal income or average personal income, because these can be compared with regional educational attainment. A limitation is that the dataset is aggregated by region, so it does not allow conclusions about individual people. Also, the 2024 figures are provisional, and regional averages may hide differences within municipalities or provinces.
+
+###
+These datasets can be merged using the region (RegioS) and year (Perioden) variables, allowing us to examine the relationship between educational attainment and personal income across Dutch regions.
 
 ``` r
 inline_code = TRUE
 ```
-
-These are things that are usually included in the metadata of the dataset. For your project, you need to provide us with the information from your metadata that we need to understand your dataset of choice.
 
 ## 2.3 Describe the type of variables included
 
