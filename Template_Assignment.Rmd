@@ -126,16 +126,42 @@ The data are derived from administrative sources, such as tax records and social
 
 
 ## 3.1 Data cleaning
+NOTES!!!!
+We can create a new variable in inkomen, by making an "income gap". income_gap =
+  average_income -
+  median_income
+  Interpretation: Large positive values indicate income is concentrated among higher earners (average exceeds median).
+  
+We can create a new variable "university_share" = bachelor + master_doctor in onderwijs by combining high education (hbo,wo) with masters and doctorate
+ncome dataset cleaning
+END NOTES
+#####
+> head(inkomen_clean)
+Selected only persons aged 25–45 years (Persoonskenmerken = 53050) because this is the main working-age population where education is expected to have the strongest relationship with income.
 
-we want to choose ages groups 25-45, keeping all the periods. We will merge the datasets by: regions, year, age group and gender. We also filtering the data to only provinces: 12 observations.
+Kept observations:
+
+Dutch regions (LD)
+Provinces (PV)
+Amsterdam (GM0363)
+
+This ensures geographical units are comparable with the education dataset.
+
+Renamed variables to improve readability:
+GemiddeldPersoonlijkInkomen_6 → average_income
+MediaanPersoonlijkInkomen_7 → median_income
+RegioS → region_code
+Perioden → year
+Added region names through a lookup table to improve interpretability.
+###
+Trade-off
+By restricting the sample to ages 25–45 and selected regions, some information is discarded. However, this produces a more focused dataset and improves comparability with the education statistics.
+
 data.onderwijs: Age groups to: 53500 (25-35) 53700 (35-45)
 
-> head(inkomen_2545)
-
-data.inkomen: age groups to: 53050 (25-45), regios: LD, PV, GM0363, all periods, variables:        MediaanPersoonlijkInkomen_7,GemiddeldPersoonlijkInkomen_6
-becomes clean dataset:
-
-> head(inkomen_clean)
+#head(inkomen_2545)
+became:
+#head(inkomen_clean)
 
 ```{r data_cleaning}
 
@@ -178,13 +204,13 @@ Please use a separate 'R block' of code for each type of cleaning. So, e.g. one 
 
 ## 3.2 Generate necessary variables
 
-Variable 1
+Variable 1 (for onderwijs)
 
 ```{r gen_var1}
 
 ```
 
-Variable 2
+Variable 2 (for inkomen)
 
 ```{r gen_var2}
 
