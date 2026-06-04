@@ -64,7 +64,7 @@ education_tables <- cbs_search("onderwijs")
 
 arbeidsverleden <- cbs_get_data("86219NED")
 onderwijs <- cbs_get_data("85525NED")
-
+inkomen <- cbs_get_data("84494NED")
 
 
 ```
