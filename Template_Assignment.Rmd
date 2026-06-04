@@ -43,13 +43,11 @@ Use APA referencing throughout your document. [Here's a link to some explanation
 
 ## 1.1 Describe the Social Problem
 Education and Income Inequality in the Netherlands
+Income inequality is an important societal concern in the Netherlands. Diferences in income influence various aspects of life, such as level of living, healthcare, education, therefore research demonstrated how individual's place of residence and educational background can predetermine socioeconomic prospects for the future. As a result, people with similar abilities may experience different economic opportunities depending on their educational background and geographic location.
 
-To what extent is educational attainment associated with income inequality across Dutch municipalities?
+Key factor associated with income is level of education. Higher education may lead to higher prospects for employment and bwtter wages. Regional exposure may also influence income through variations in labor market conditions, economic development, and access to educational resources. If income depends strongly on education level and region, policymakers can develop targeted measures to reduce inequalities and promote equal opportunities across different parts of the country.
 
-Why this is a social problem:
-
-Education is often viewed as a pathway to economic opportunity. If municipalities with lower educational attainment also experience greater inequality, it suggests unequal access to opportunities and social mobility.
-Include the following:
+In this report we quantify the relationship between level of education, region and income in the Netherlands using data from Statistics Netherlands (CBS). Specifically, we analyze how income varies across different education levels and regions  and assess whether these factors are associated with economic outcomes.
 
 # Part 2 - Data Sourcing
 
