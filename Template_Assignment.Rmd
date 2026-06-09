@@ -31,7 +31,7 @@ Sofiia
 Victoria
 Yurii
 
-Include the tutorial group number
+Include the tutorial group number 
 
 Include your tutorial lecturer's name
 
@@ -76,7 +76,11 @@ head(data.onderwijs)
 
 ### Dataset 1: Educational Attainment (85525NED)
 
-The dataset "Bevolking; hoogstbehaald onderwijsniveau en regio" contains information on the highest educational attainment of people aged 15–75 in the Netherlands, broken down by region, gender, age group, and year. The data are collected by Statistics Netherlands (CBS) and are available from 2013–2024. The unit of observation is a combination of region and year. Key variables include the percentage of people with low education (primary education, VMBO, MBO1), medium education (HAVO, VWO, MBO2-4), and higher education (HBO, WO). 
+The dataset "Bevolking; hoogstbehaald onderwijsniveau en regio" contains information on the highest educational attainment of people aged 15–75 in the Netherlands, broken down by region, gender, age group, and year. The data are collected by Statistics Netherlands (CBS) and are available from 2013–2024. The unit of observation is a combination of region and year. 
+
+Key variables include: 
+- the percentage of people with low education (primary education, VMBO, MBO1), - medium education (HAVO, VWO, MBO2-4), and higher education (HBO, WO). 
+
 For this project, the share of highly educated people is the most relevant variable, as it can be compared with regional income levels. A limitation of the dataset is that it contains aggregated regional statistics rather than individual-level data, so relationships observed across regions may not necessarily apply to individuals.
 
 ```{r}
@@ -126,6 +130,47 @@ The data are derived from administrative sources, such as tax records and social
 
 
 ## 3.1 Data cleaning
+
+```{r missing values}
+colSums(is.na(data.inkomen))
+colSums(is.na(data.onderwijs))
+#check for missing values
+```
+```{r dublictaes}
+sum(duplicated(data.inkomen))
+sum(duplicated(data.onderwijs))
+#check for dublicates
+```
+```{r structure}
+str(data.inkomen)
+str(data.onderwijs)
+```
+```{r remove_na}
+data.inkomen <- na.omit(data.inkomen)
+data.onderwijs <- na.omit(data.onderwijs)
+#remove no data
+```
+
+data.inkommen (selecting relevant variables)
+```{r select variables inkommen}
+data.inkomen <- data.inkomen %>%
+  select(
+    RegioS,
+    Perioden,
+    GemiddeldPersoonlijkInkomen_6,
+    MediaanPersoonlijkInkomen_7
+  )
+```
+data.onderwijs (selecting relevant variables)
+```{r select variables onderwijs}
+
+```
+
+
+#creating new variables:
+"income gap" - Large positive values indicate income is concentrated among higher earners
+"university_share" = bachelor + master_doctor
+
 NOTES!!!!
 We can create a new variable in inkomen, by making an "income gap". income_gap =
   average_income -
@@ -167,8 +212,6 @@ became:
 
 ###new name 
 
-head(inkomen_2545)
-
 inkomen_2545 <- data.inkomen %>%
   mutate(Persoonskenmerken = trimws(as.character(Persoonskenmerken))) %>%
   filter(Persoonskenmerken == "53050") %>%
@@ -178,6 +221,8 @@ inkomen_2545 <- data.inkomen %>%
     MediaanPersoonlijkInkomen_7,
     GemiddeldPersoonlijkInkomen_6
   )
+
+head(inkomen_2545)
 
 library(dplyr)
 
@@ -275,3 +320,6 @@ Provide the link to your PUBLIC repository here: ...
 ## 5.2 Reference list
 
 Use APA referencing throughout your document.
+
+
+
