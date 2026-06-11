@@ -128,60 +128,27 @@ The data are derived from administrative sources, such as tax records and social
 
 # Part 3 - Quantifying
 
-
 ## 3.1 Data cleaning
 
 ```{r missing values}
-colSums(is.na(data.inkomen))
-colSums(is.na(data.onderwijs))
+colSums(is.na(data.inkomen.raw))
+colSums(is.na(data.onderwijs.raw))
 #check for missing values
 ```
 ```{r dublictaes}
-sum(duplicated(data.inkomen))
-sum(duplicated(data.onderwijs))
+sum(duplicated(data.inkomen.raw))
+sum(duplicated(data.onderwijs.raw))
 #check for dublicates
 ```
 ```{r structure}
-str(data.inkomen)
-str(data.onderwijs)
+str(data.inkomen.raw)
+str(data.onderwijs.raw)
 ```
 ```{r remove_na}
-data.inkomen <- na.omit(data.inkomen)
-data.onderwijs <- na.omit(data.onderwijs)
+data.inkomen <- na.omit(data.inkomen.raw)
+data.onderwijs <- na.omit(data.onderwijs.raw)
 #remove no data
 ```
-
-Selecting relevant variables for data.inkommen
-```{r select variables inkommen}
-data.inkomen <- data.inkomen %>%
-  select(
-    RegioS,                        
-    Perioden,                      
-    GemiddeldPersoonlijkInkomen_6, 
-    MediaanPersoonlijkInkomen_7    
-  )
-```
-RegioS - region identifier 
-Perioden - time period 
-GemiddeldPersoonlijkInkomen_6 - mean personal income
-MediaanPersoonlijkInkomen_7 - median personal income
-
-Selecting relevant variables for data.onderwijs 
-```{r select variables onderwijs}
-data.onderwijs <- data.onderwijs %>%
-  select( 
-    RegioS,
-    Perioden,
-    k_1BasisonderwijsVmboMbo1_2,
-    k_2HavoVwoMbo24_3,
-    k_3HboWo_4)
-
-```
-RegioS - region identifier 
-Perioden - time period 
-k_1BasisonderwijsVmboMbo1_2 - Low education variable
-k_2HavoVwoMbo24_3 - Medium education variable
-k_3HboWo_4 - Higher education variable
 
 Filtering for data.inkommen
 ```{r filter_inkomen}
@@ -194,6 +161,11 @@ data.inkomen <- data.inkomen.raw %>%
          GemiddeldPersoonlijkInkomen_6,
          MediaanPersoonlijkInkomen_7)
 ```
+Chosen variables:
+RegioS - region identifier 
+Perioden - time period 
+GemiddeldPersoonlijkInkomen_6 - mean personal income
+MediaanPersoonlijkInkomen_7 - median personal income
 
 Filtering for data.onderwijs
 ```{r filter_onderwijs}
@@ -207,10 +179,16 @@ data.onderwijs <- data.onderwijs.raw %>%
          k_2HavoVwoMbo24_3,
          k_3HboWo_4)
 ```
+Chosen variables:
+RegioS - region identifier 
+Perioden - time period 
+k_1BasisonderwijsVmboMbo1_2 - Low education variable
+k_2HavoVwoMbo24_3 - Medium education variable
+k_3HboWo_4 - Higher education variable
 
 
 Merging two data sets
-```{r}
+```{r merged data sets}
 data.combined <- data.inkomen %>%
   inner_join(data.onderwijs, by = c("RegioS", "Perioden"))
 
