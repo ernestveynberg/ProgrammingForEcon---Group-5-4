@@ -12,6 +12,15 @@ install.packages("tidyverse")
 install.packages("yaml")
 install.packages("rmarkdown")
 install.packages("cbsodataR")
+install.packages(c(
+  "tidyverse",
+  "ggplot2",
+  "sf",
+  "tmap",
+  "viridis",
+  "rnaturalearth",
+  "rnaturalearthdata"
+))
 ```
 
 
@@ -21,6 +30,12 @@ library(readr)
 library(rmarkdown)
 library(yaml)
 library(cbsodataR)
+library(tidyverse)
+library(ggplot2)
+library(tmap)
+library(viridis)
+library(rnaturalearth)
+library(rnaturalearthdata)
 ```
 
 # Title Page
@@ -243,8 +258,26 @@ data.combined <- data.combined %>%
 ## 3.3 Visualize temporal variation
 
 ```{r}
+data.combined <- data.combined %>%
+  mutate(year = as.numeric(substr(Perioden, 1, 4)))
 
+ggplot(data.combined,
+       aes(x = year, y = income_gap, group = 1)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Income inequality over time",
+    x = "Year",
+    y = "Income gap"
+  )
 ```
+```{r}
+income_gap_year <- data.combined %>%
+  mutate(year = as.numeric(substr(Perioden, 1, 4))) %>%
+  group_by(year) %>%
+  summarise(mean_gap = mean(income_gap, na.rm = TRUE))
+```
+
 
 ## 3.4 Visualize spatial variation
 
