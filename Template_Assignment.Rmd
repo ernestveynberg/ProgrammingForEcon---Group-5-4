@@ -258,18 +258,10 @@ data.combined <- data.combined %>%
 ## 3.3 Visualize temporal variation
 
 ```{r}
-data.combined <- data.combined %>%
-  mutate(year = as.numeric(substr(Perioden, 1, 4)))
-
-ggplot(data.combined,
-       aes(x = year, y = income_gap, group = 1)) +
-  geom_line() +
-  geom_point() +
-  labs(
-    title = "Income inequality over time",
-    x = "Year",
-    y = "Income gap"
-  )
+income_gap_year <- data.combined %>%
+  mutate(year = as.numeric(substr(Perioden, 1, 4))) %>%
+  group_by(year) %>%
+  summarise(mean_gap = mean(income_gap, na.rm = TRUE))
 ```
 ```{r}
 income_gap_year <- data.combined %>%
@@ -279,19 +271,128 @@ income_gap_year <- data.combined %>%
 ```
 
 
+```{r}
+income_gap_year <- data.combined %>%
+  group_by(year) %>%
+  summarise(mean_gap = mean(income_gap, na.rm = TRUE))
+
+head(income_gap_year)
+```
+
+```{r}
+ggplot(income_gap_year,
+       aes(x = year, y = mean_gap)) +
+  geom_line() +
+  geom_point()
+```
+Income inequality over time
+
+```{r}
+regions_compare <- data.combined %>%
+  filter(RegioS %in% c("GM0363",
+                       "LD01",
+                       "LD02",
+                       "LD03",
+                       "LD04"))
+ggplot(regions_compare,
+       aes(x = year,
+           y = income_gap,
+           colour = RegioS,
+           group = RegioS)) +
+  geom_line(size = 1) +
+  geom_point() +
+  labs(
+    title = "Income inequality by major Dutch regions",
+    x = "Year",
+    y = "Income gap",
+    colour = "Region"
+  )
+regions_compare <- regions_compare %>%
+  mutate(region_name = case_when(
+    RegioS == "GM0363" ~ "Amsterdam",
+    RegioS == "LD01" ~ "North Netherlands",
+    RegioS == "LD02" ~ "East Netherlands",
+    RegioS == "LD03" ~ "West Netherlands",
+    RegioS == "LD04" ~ "South Netherlands"
+  ))
+
+ggplot(regions_compare,
+       aes(x = year,
+           y = income_gap,
+           colour = region_name,
+           group = region_name)) +
+  geom_line(size = 1) +
+  geom_point() +
+labs(
+  title = "Income inequality over time across major Dutch regions (2013–2024)",
+  x = "Year",
+  y = "Income gap (Average income − Median income)",
+  colour = "Region",
+  caption = "Source: Statistics Netherlands (CBS). Income gap calculated as average income minus median income."
+)
+
+```
+Figure X shows the evolution of income inequality between 2013 and 2024. Income inequality increased in all regions during the period. West Netherlands consistently exhibited the highest income gap, reaching approximately 5.1 in 2023, while North Netherlands showed the lowest levels throughout the period. Amsterdam experienced one of the strongest increases, suggesting that income dispersion may be particularly pronounced in highly urbanised areas. Although inequality declined slightly in 2024, regional differences remained substantial.
 ## 3.4 Visualize spatial variation
 
 ```{r visualise_map}
-
+province_coords <- data.frame(
+  RegioS = c("PV20", "PV21", "PV22", "PV23", "PV24", "PV25",
+             "PV26", "PV27", "PV28", "PV29", "PV30", "PV31"),
+  province = c("Groningen", "Fryslân", "Drenthe", "Overijssel",
+               "Flevoland", "Gelderland", "Utrecht", "Noord-Holland",
+               "Zuid-Holland", "Zeeland", "Noord-Brabant", "Limburg"),
+  lon = c(6.57, 5.78, 6.55, 6.45, 5.52, 5.90, 5.12, 4.80,
+          4.49, 3.85, 5.22, 5.93),
+  lat = c(53.22, 53.15, 52.90, 52.45, 52.52, 52.05, 52.09, 52.60,
+          52.00, 51.50, 51.55, 51.20)
+)
 ```
 
-Here you provide a description of why the plot above is relevant to your specific social problem.
+
+```{r visualise_map}
+province_2024 <- data.combined %>%
+  filter(year == 2024, grepl("^PV", RegioS)) %>%
+  left_join(province_coords, by = "RegioS")
+```
+
+```{r}
+ggplot(province_2024,
+       aes(x = lon,
+           y = lat,
+           size = income_gap,
+           colour = income_gap,
+           label = province)) +
+  geom_point(alpha = 0.8) +
+  geom_text(vjust = -1, size = 3) +
+  scale_size_continuous(name = "Income gap") +
+  scale_colour_continuous(name = "Income gap") +
+  labs(
+    title = "Income inequality by Dutch province in 2024",
+    subtitle = "Bubble size and colour represent income gap",
+    x = "Longitude",
+    y = "Latitude",
+    caption = "Source: CBS. Bubbles placed at approximate province centroids."
+  )
+```
+
+This bubble map shows spatial variation in income inequality across Dutch provinces in 2024. Larger and darker bubbles indicate a larger gap between average and median income. The map is based on approximate province centroids rather than full province boundaries, so it should be interpreted as a spatial comparison rather than a precise choropleth map.
 
 ## 3.5 Visualize sub-population variation
 
-What is the poverty rate by state?
+```{r}
 
-
+ggplot(data.combined,
+       aes(x = high_education_share,
+           y = GemiddeldPersoonlijkInkomen_6)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "Higher education and average income",
+    x = "Share with higher education (%)",
+    y = "Average personal income"
+  )
+```
 
 
 Here you provide a description of why the plot above is relevant to your specific social problem.
@@ -300,8 +401,19 @@ Here you provide a description of why the plot above is relevant to your specifi
 
 Analyze the relationship between two variables.
 
-```{r analysis}
+```{r figure4_master_income}
 
+ggplot(data.combined,
+       aes(x = k_32HboWoMasterDoctor_9,
+           y = GemiddeldPersoonlijkInkomen_6)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(
+    title = "Master/Doctor education share and average income",
+    x = "Share with HBO/WO master or doctor degree (%)",
+    y = "Average personal income",
+    caption = "Source: Statistics Netherlands (CBS)."
+  )
 ```
 
 Here you provide a description of why the plot above is relevant to your specific social problem.
