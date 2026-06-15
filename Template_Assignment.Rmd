@@ -131,66 +131,91 @@ The data are derived from administrative sources, such as tax records and social
 ## 3.1 Data cleaning
 
 ```{r missing values}
-colSums(is.na(data.inkomen.raw))
-colSums(is.na(data.onderwijs.raw))
+colSums(is.na(data.inkomen))
+colSums(is.na(data.onderwijs))
 #check for missing values
 ```
 ```{r dublictaes}
-sum(duplicated(data.inkomen.raw))
-sum(duplicated(data.onderwijs.raw))
+sum(duplicated(data.inkomen))
+sum(duplicated(data.onderwijs))
 #check for dublicates
 ```
 ```{r structure}
-str(data.inkomen.raw)
-str(data.onderwijs.raw)
+str(data.inkomen)
+str(data.onderwijs)
 ```
 ```{r remove_na}
-data.inkomen <- na.omit(data.inkomen.raw)
-data.onderwijs <- na.omit(data.onderwijs.raw)
+data.inkomen <- na.omit(data.inkomen)
+data.onderwijs <- na.omit(data.onderwijs)
 #remove no data
 ```
 
-Filtering for data.inkommen
-```{r filter_inkomen}
-data.inkomen <- data.inkomen.raw %>%
-  filter(trimws(Geslacht) == "T001038",
-         trimws(Persoonskenmerken) == "T009002") %>%
-  mutate(RegioS = trimws(RegioS),
-         Perioden = trimws(Perioden)) %>%
-  select(RegioS, Perioden,
-         GemiddeldPersoonlijkInkomen_6,
-         MediaanPersoonlijkInkomen_7)
+Filtering for data.inkomen
+
+```{r income_cleaning}
+
+data.inkomenclean <- data.inkomen %>%
+  mutate(
+    Geslacht = trimws(as.character(Geslacht)),
+    Persoonskenmerken = trimws(as.character(Persoonskenmerken)),
+    RegioS = trimws(as.character(RegioS)),
+    Perioden = trimws(as.character(Perioden))
+  ) %>%
+  filter(
+    Geslacht == "T001038",
+    Persoonskenmerken == "53050",
+    grepl("^LD", RegioS) |
+      grepl("^PV", RegioS) |
+      RegioS == "GM0363"
+  ) %>%
+  select(
+    RegioS,
+    Perioden,
+    GemiddeldPersoonlijkInkomen_6,
+    MediaanPersoonlijkInkomen_7
+  )
+
+head(data.inkomenclean)
+
 ```
+
 Chosen variables:
 RegioS - region identifier 
 Perioden - time period 
-GemiddeldPersoonlijkInkomen_6 - mean personal income
+GemiddeldPersoonlijkInkomen_6 - mean personal income (average)
 MediaanPersoonlijkInkomen_7 - median personal income
 
 Filtering for data.onderwijs
 ```{r filter_onderwijs}
-data.onderwijs <- data.onderwijs.raw %>%
-  filter(trimws(Geslacht) == "T001038",
-         Leeftijd == 53050) %>%
-  mutate(RegioS = trimws(RegioS),
-         Perioden = trimws(Perioden)) %>%
-  select(RegioS, Perioden,
-         k_1BasisonderwijsVmboMbo1_2,
-         k_2HavoVwoMbo24_3,
-         k_3HboWo_4)
+data.onderwijsclean <- data.onderwijs %>%
+  filter(
+    trimws(Geslacht) == "T001038",
+    Leeftijd %in% c(53050, 53700)
+  ) %>%
+  mutate(
+    RegioS = trimws(RegioS),
+    Perioden = trimws(Perioden)
+  ) %>%
+  group_by(RegioS, Perioden) %>%
+  summarise(
+    k_2HavoVwoMbo24_3 = mean(k_2HavoVwoMbo24_3, na.rm = TRUE),
+    k_3HboWo_4 = mean(k_3HboWo_4, na.rm = TRUE),
+    k_32HboWoMasterDoctor_9 = mean(k_32HboWoMasterDoctor_9, na.rm = TRUE),
+    .groups = "drop"
+  )
 ```
 Chosen variables:
 RegioS - region identifier 
 Perioden - time period 
-k_1BasisonderwijsVmboMbo1_2 - Low education variable
 k_2HavoVwoMbo24_3 - Medium education variable
 k_3HboWo_4 - Higher education variable
-
+k_32HboWoMasterDoctor_9 - Bachelor + Master/Doctor variable
+(Filtered with 53050 and 53700 age groups and took an average to not create identical tables)
 
 Merging two data sets
 ```{r merged data sets}
-data.combined <- data.inkomen %>%
-  inner_join(data.onderwijs, by = c("RegioS", "Perioden"))
+data.combined <- data.inkomenclean %>%
+  inner_join(data.onderwijsclean, by = c("RegioS", "Perioden"))
 
 nrow(data.combined)
 ncol(data.combined)
@@ -198,99 +223,22 @@ head(data.combined)
 ```
 
 
-#creating new variables:
-"income gap" - Large positive values indicate income is concentrated among higher earners
-"university_share" = bachelor + master_doctor
-
-NOTES!!!!
-We can create a new variable in inkomen, by making an "income gap". income_gap =
-  average_income -
-  median_income
-  Interpretation: Large positive values indicate income is concentrated among higher earners (average exceeds median).
-  
-We can create a new variable "university_share" = bachelor + master_doctor in onderwijs by combining high education (hbo,wo) with masters and doctorate
-ncome dataset cleaning
-END NOTES
-#####
-> head(inkomen_clean)
-Selected only persons aged 25–45 years (Persoonskenmerken = 53050) because this is the main working-age population where education is expected to have the strongest relationship with income.
-
-Kept observations:
-
-Dutch regions (LD)
-Provinces (PV)
-Amsterdam (GM0363)
-
-This ensures geographical units are comparable with the education dataset.
-
-Renamed variables to improve readability:
-GemiddeldPersoonlijkInkomen_6 → average_income
-MediaanPersoonlijkInkomen_7 → median_income
-RegioS → region_code
-Perioden → year
-Added region names through a lookup table to improve interpretability.
-###
-Trade-off
-By restricting the sample to ages 25–45 and selected regions, some information is discarded. However, this produces a more focused dataset and improves comparability with the education statistics.
-
-data.onderwijs: Age groups to: 53500 (25-35) 53700 (35-45)
-
-#head(inkomen_2545)
-became:
-#head(inkomen_clean)
-
-```{r data_cleaning}
-
-###new name 
-
-inkomen_2545 <- data.inkomen %>%
-  mutate(Persoonskenmerken = trimws(as.character(Persoonskenmerken))) %>%
-  filter(Persoonskenmerken == "53050") %>%
-  select(
-    RegioS,
-    Perioden,
-    MediaanPersoonlijkInkomen_7,
-    GemiddeldPersoonlijkInkomen_6
-  )
-
-head(inkomen_2545)
-
-library(dplyr)
-
-inkomen_clean <- inkomen_2545 %>%
-  filter(
-    grepl("^LD", RegioS) |
-    grepl("^PV", RegioS) |
-    RegioS == "GM0363"
-  )
-> inkomen_clean <- inkomen_clean %>%
-+     select(-Region.x) %>%
-+     rename(Region = Region.y)
-> inkomen_clean <- inkomen_clean %>%
-+     rename(
-+         region_code = RegioS,
-+         year = Perioden,
-+         median_income = MediaanPersoonlijkInkomen_7,
-+         average_income = GemiddeldPersoonlijkInkomen_6,
-+         region = Region
-+     )
-```
-
-Please use a separate 'R block' of code for each type of cleaning. So, e.g. one for missing values, a new one for removing unnecessary variables etc.
-
 ## 3.2 Generate necessary variables
 
-Variable 1 (for onderwijs)
-
+1. variable: income gap
+2. variable: high education share
 ```{r gen_var1}
+data.combined <- data.combined %>%
+  mutate(
+    income_gap = GemiddeldPersoonlijkInkomen_6 -
+                 MediaanPersoonlijkInkomen_7,
 
+    high_education_share =
+      k_3HboWo_4 +
+      k_32HboWoMasterDoctor_9
+  )
 ```
 
-Variable 2 (for inkomen)
-
-```{r gen_var2}
-
-```
 
 ## 3.3 Visualize temporal variation
 
@@ -310,21 +258,8 @@ Here you provide a description of why the plot above is relevant to your specifi
 
 What is the poverty rate by state?
 
-```{r visualise_subpopulations}
-dataset$inmetro <- dataset$inmetro %>% as.factor()
-# Boxplot of poverty rate by state using the 'midwest' dataset
-ggplot(dataset, aes(x = inmetro, y = percadultpoverty)) +
-  geom_boxplot() +
-  labs(
-    title = "Distribution of Poverty Rates by Metropolitan status (Midwest counties)",
-    x = "Metropolitan Area",
-    y = "Poverty Rate of Adults (%)"
-  ) +
-  theme_minimal() +
-  theme(
-    legend.position = "right"
-  )
-```
+
+
 
 Here you provide a description of why the plot above is relevant to your specific social problem.
 
