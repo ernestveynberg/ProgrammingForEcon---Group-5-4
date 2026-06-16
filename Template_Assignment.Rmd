@@ -12,6 +12,9 @@ install.packages("tidyverse")
 install.packages("yaml")
 install.packages("rmarkdown")
 install.packages("cbsodataR")
+install.packages("ggrepel")
+install.packages("gganimate")
+install.packages("gifski")
 install.packages(c(
   "tidyverse",
   "ggplot2",
@@ -34,8 +37,12 @@ library(tidyverse)
 library(ggplot2)
 library(tmap)
 library(viridis)
+library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
+library(sf)
+library(ggrepel)
+library(gganimate)
 ```
 
 # Title Page
@@ -187,7 +194,6 @@ data.inkomenclean <- data.inkomen %>%
     RegioS,
     Perioden,
     GemiddeldPersoonlijkInkomen_6,
-    MediaanPersoonlijkInkomen_7
   )
 
 head(data.inkomenclean)
@@ -198,7 +204,6 @@ Chosen variables:
 RegioS - region identifier 
 Perioden - time period 
 GemiddeldPersoonlijkInkomen_6 - mean personal income (average)
-MediaanPersoonlijkInkomen_7 - median personal income
 
 Filtering for data.onderwijs
 ```{r filter_onderwijs}
@@ -240,121 +245,113 @@ head(data.combined)
 
 ## 3.2 Generate necessary variables
 
-1. variable: income gap
+1. variable: mid education share
 2. variable: high education share
-```{r gen_var1}
+3. variable: income index
+```{r gen_variables}
 data.combined <- data.combined %>%
   mutate(
-    income_gap = GemiddeldPersoonlijkInkomen_6 -
-                 MediaanPersoonlijkInkomen_7,
+    high_education_share = k_3HboWo_4 + k_32HboWoMasterDoctor_9,
+    mid_education_share  = k_2HavoVwoMbo24_3,
+    income_index         = GemiddeldPersoonlijkInkomen_6 / 
+                           mean(GemiddeldPersoonlijkInkomen_6, na.rm = TRUE) * 100
+  )
 
-    high_education_share =
-      k_3HboWo_4 +
-      k_32HboWoMasterDoctor_9
+```
+
+
+## 3.3 Temporal variation — average income index and education share over time
+
+```{r}
+data.combined <- data.combined %>%
+  mutate(year = as.numeric(substr(Perioden, 1, 4)))
+
+temporal_data <- data.combined %>%
+  group_by(year) %>%
+    summarise(mean_income = mean(GemiddeldPersoonlijkInkomen_6, na.rm = TRUE),
+    mean_high_edu_share  = mean(high_education_share, na.rm = TRUE)
   )
 ```
 
 
-## 3.3 Visualize temporal variation
-
 ```{r}
-income_gap_year <- data.combined %>%
-  mutate(year = as.numeric(substr(Perioden, 1, 4))) %>%
-  group_by(year) %>%
-  summarise(mean_gap = mean(income_gap, na.rm = TRUE))
-```
-```{r}
-income_gap_year <- data.combined %>%
-  mutate(year = as.numeric(substr(Perioden, 1, 4))) %>%
-  group_by(year) %>%
-  summarise(mean_gap = mean(income_gap, na.rm = TRUE))
-```
-
-
-```{r}
-income_gap_year <- data.combined %>%
-  group_by(year) %>%
-  summarise(mean_gap = mean(income_gap, na.rm = TRUE))
-
-head(income_gap_year)
-```
-
-```{r}
-ggplot(income_gap_year,
-       aes(x = year, y = mean_gap)) +
-  geom_line() +
-  geom_point()
-```
-Income inequality over time
-
-```{r}
-regions_compare <- data.combined %>%
-  filter(RegioS %in% c("GM0363",
-                       "LD01",
-                       "LD02",
-                       "LD03",
-                       "LD04"))
-ggplot(regions_compare,
-       aes(x = year,
-           y = income_gap,
-           colour = RegioS,
-           group = RegioS)) +
-  geom_line(size = 1) +
-  geom_point() +
+ggplot(temporal_data, aes(x = year)) +
+  geom_line(aes(y = mean_income, colour = "Average income (×1000 €)"),
+            linewidth = 0.8) +
+  geom_point(aes(y = mean_income, colour = "Average income (×1000 €)"),
+             size = 2) +
+  geom_line(aes(y = mean_high_edu_share, colour = "Higher education share (%)"),
+            linewidth = 0.8, linetype = "dashed") +
+  geom_point(aes(y = mean_high_edu_share, colour = "Higher education share (%)"),
+             size = 2) +
+  geom_vline(xintercept = 2020, linetype = "dotted", colour = "grey40") +
+  annotate("text", x = 2020.1, y = 36, label = "COVID-19",
+           hjust = 0, size = 3, colour = "grey40") +
+  scale_x_continuous(breaks = seq(min(temporal_data$year),
+                                   max(temporal_data$year), by = 1)) +
+  scale_colour_manual(values = c("Average income (×1000 €)" = "dodgerblue",
+                                  "Higher education share (%)" = "tomato")) +
   labs(
-    title = "Income inequality by major Dutch regions",
-    x = "Year",
-    y = "Income gap",
-    colour = "Region"
-  )
-regions_compare <- regions_compare %>%
-  mutate(region_name = case_when(
-    RegioS == "GM0363" ~ "Amsterdam",
-    RegioS == "LD01" ~ "North Netherlands",
-    RegioS == "LD02" ~ "East Netherlands",
-    RegioS == "LD03" ~ "West Netherlands",
-    RegioS == "LD04" ~ "South Netherlands"
-  ))
+    title   = "Average income and higher education share across Dutch provinces, 2013–2024",
+    x       = "Year",
+    y       = "Average value across provinces",
+    colour  = NULL,
+    caption = "Source: Statistics Netherlands (CBS)."
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
 
-ggplot(regions_compare,
-       aes(x = year,
-           y = income_gap,
-           colour = region_name,
-           group = region_name)) +
-  geom_line(size = 1) +
-  geom_point() +
-labs(
-  title = "Income inequality over time across major Dutch regions (2013–2024)",
-  x = "Year",
-  y = "Income gap (Average income − Median income)",
-  colour = "Region",
-  caption = "Source: Statistics Netherlands (CBS). Income gap calculated as average income minus median income."
-)
+Between 2013 and 2024, both average personal income and the share of higher-educated residents increased steadily across Dutch provinces. Average income rose from approximately €10,000 to €17,000, while the higher education share grew from 28% to 37%. The two trends move in parallel, suggesting a positive association between education levels and income over time. Growth in both indicators accelerated after 2018. The dotted line marks the onset of COVID-19 in 2020; while no sharp break is visible, income growth slowed slightly in 2019–2020 before recovering strongly. Note that rising income partly reflects inflation rather than real income gains, and the parallel trends do not establish a causal relationship — both may reflect broader urbanisation and economic growth.
+
+
+
+
+```{r}
+map_data <- provinces_sf %>%
+  left_join(
+    data.provinces %>%
+      left_join(prov_lookup, by = "RegioS") %>%
+      group_by(statnaam) %>%
+      summarise(
+        mean_income   = mean(GemiddeldPersoonlijkInkomen_6, na.rm = TRUE),
+        mean_high_edu = mean(high_education_share, na.rm = TRUE)
+      ),
+    by = "statnaam"
+  )
 
 ```
-Figure X shows the evolution of income inequality between 2013 and 2024. Income inequality increased in all regions during the period. West Netherlands consistently exhibited the highest income gap, reaching approximately 5.1 in 2023, while North Netherlands showed the lowest levels throughout the period. Amsterdam experienced one of the strongest increases, suggesting that income dispersion may be particularly pronounced in highly urbanised areas. Although inequality declined slightly in 2024, regional differences remained substantial.
+
 ## 3.4 Visualize spatial variation
 
 ```{r visualise_map}
-province_coords <- data.frame(
-  RegioS = c("PV20", "PV21", "PV22", "PV23", "PV24", "PV25",
-             "PV26", "PV27", "PV28", "PV29", "PV30", "PV31"),
-  province = c("Groningen", "Fryslân", "Drenthe", "Overijssel",
-               "Flevoland", "Gelderland", "Utrecht", "Noord-Holland",
-               "Zuid-Holland", "Zeeland", "Noord-Brabant", "Limburg"),
-  lon = c(6.57, 5.78, 6.55, 6.45, 5.52, 5.90, 5.12, 4.80,
-          4.49, 3.85, 5.22, 5.93),
-  lat = c(53.22, 53.15, 52.90, 52.45, 52.52, 52.05, 52.09, 52.60,
-          52.00, 51.50, 51.55, 51.20)
-)
+library(ggrepel)
+
+ggplot(map_data) +
+  geom_sf(aes(fill = mean_high_edu), colour = "white", linewidth = 0.5) +
+  scale_fill_viridis_c(
+    name      = "Higher education\nshare (%)",
+    option    = "plasma",
+    direction = -1
+  ) +
+  geom_sf_text(aes(label = statnaam),
+               size     = 2.5,
+               colour   = "white",
+               fontface = "bold") +
+  labs(
+    title   = "Average higher education share by Dutch province, 2013–2024",
+    caption = "Source: Statistics Netherlands (CBS). Boundary: CBS/cartomap 2024."
+  ) +
+  theme_void() +
+  theme(
+    plot.title      = element_text(size = 12, margin = margin(b = 8)),
+    legend.position = "right"
+  )
 ```
+The map reveals a clear urban-rural divide in higher education across Dutch provinces. Utrecht (~45%) and Noord-Holland (~41%) stand out as the most highly educated, reflecting the concentration of universities and knowledge-intensive industries in the Randstad. In contrast, peripheral provinces like Zeeland (~22%), Fryslân (~24%) and Drenthe (~24%) have the lowest shares. Groningen is a notable exception among northern provinces, likely due to its large university.
+Provinces with higher education shares generally also have higher average incomes, suggesting education partly drives regional income differences. However, Zeeland — the least educated province — records the highest average income (~€14k), indicating that education alone does not fully explain provincial income variation.
 
 
-```{r visualise_map}
-province_2024 <- data.combined %>%
-  filter(year == 2024, grepl("^PV", RegioS)) %>%
-  left_join(province_coords, by = "RegioS")
-```
 
 ```{r}
 ggplot(province_2024,
@@ -382,41 +379,91 @@ This bubble map shows spatial variation in income inequality across Dutch provin
 
 ```{r}
 
-ggplot(data.combined,
-       aes(x = high_education_share,
-           y = GemiddeldPersoonlijkInkomen_6)) +
-  geom_point(alpha = 0.5) +
-  geom_smooth(method = "lm") +
+# reshape to long format for plotting
+subpop_data <- data.combined %>%
+  filter(substr(RegioS, 1, 2) == "PV") %>%
+  left_join(prov_lookup, by = "RegioS") %>%
+  group_by(statnaam) %>%
+  summarise(
+    High    = mean(high_education_share, na.rm = TRUE),
+    Mid     = mean(mid_education_share, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = c(High, Mid),
+               names_to  = "education_level",
+               values_to = "share")
+```
+
+```{r}
+ggplot(subpop_data, aes(x = reorder(statnaam, -share), 
+                         y = share, 
+                         fill = education_level)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("High" = "tomato", 
+                                "Mid"  = "dodgerblue")) +
   labs(
-    title = "Higher education and average income",
-    x = "Share with higher education (%)",
-    y = "Average personal income"
+    title   = "Higher and mid-level education share by Dutch province",
+    x       = "Province",
+    y       = "Share of population (%)",
+    fill    = "Education level",
+    caption = "Source: Statistics Netherlands (CBS)."
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x     = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom"
   )
 ```
 
-
-Here you provide a description of why the plot above is relevant to your specific social problem.
+This grouped bar chart is directly relevant to understanding regional income inequality in the Netherlands. If higher education is a key driver of personal income — as suggested by the scatter plots in sections 3.5 and 3.6 — then provinces with low higher education shares are structurally disadvantaged in terms of earning potential. The large variation in higher education share across provinces (22% in Zeeland to 45% in Utrecht) implies that where someone is born or lives in the Netherlands significantly affects their access to high-income opportunities. Mid-level education, by contrast, is evenly distributed across provinces and therefore cannot explain regional income differences. This means that policies targeting higher education access in peripheral provinces like Zeeland, Fryslân and Drenthe could be an effective lever for reducing the income gap between Dutch regions.
 
 ## 3.6 Event analysis
 
-Analyze the relationship between two variables.
 
 ```{r figure4_master_income}
 
-ggplot(data.combined,
-       aes(x = k_32HboWoMasterDoctor_9,
-           y = GemiddeldPersoonlijkInkomen_6)) +
-  geom_point(alpha = 0.5) +
-  geom_smooth(method = "lm", se = TRUE) +
-  labs(
-    title = "Master/Doctor education share and average income",
-    x = "Share with HBO/WO master or doctor degree (%)",
-    y = "Average personal income",
-    caption = "Source: Statistics Netherlands (CBS)."
+event_data <- data.combined %>%
+  filter(substr(RegioS, 1, 2) == "PV") %>%
+  group_by(year) %>%
+  summarise(
+    mean_income   = mean(GemiddeldPersoonlijkInkomen_6, na.rm = TRUE),
+    mean_high_edu = mean(high_education_share, na.rm = TRUE)
+  ) %>%
+  mutate(period = ifelse(year < 2020, "Pre-COVID", "Post-COVID")
   )
 ```
 
-Here you provide a description of why the plot above is relevant to your specific social problem.
+```{r}
+event_data_growth <- event_data %>%
+  arrange(year) %>%
+  mutate(income_growth = (mean_income - lag(mean_income)) / 
+                          lag(mean_income) * 100)
+
+ggplot(event_data_growth, aes(x = year, y = income_growth)) +
+  geom_line(colour = "steelblue", linewidth = 0.8) +
+  geom_point(aes(colour = period), size = 3) +
+  geom_vline(xintercept = 2020, linetype = "dashed",
+             colour = "grey40", linewidth = 0.7) +
+  annotate("text", x = 2020.15, y = max(event_data_growth$income_growth, na.rm = TRUE) * 0.95,
+           label = "COVID-19 (2020)", hjust = 0, size = 3, colour = "grey40") +
+  annotate("rect", xmin = 2020, xmax = Inf,
+           ymin = -Inf, ymax = Inf,
+           alpha = 0.05, fill = "grey40") +
+  scale_colour_manual(values = c("Pre-COVID"  = "dodgerblue",
+                                  "Post-COVID" = "tomato")) +
+  scale_x_continuous(breaks = seq(min(event_data_growth$year, na.rm = TRUE),
+                                   max(event_data_growth$year, na.rm = TRUE), by = 1)) +
+  labs(
+    title    = "Annual growth rate of average personal income before and after COVID-19",
+    subtitle = "Dutch provinces, 2013–2024",
+    x        = "Year",
+    y        = "Income growth rate (%)",
+    colour   = "Period",
+    caption  = "Source: Statistics Netherlands (CBS)."
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+Prior to COVID-19, income growth was modest and gradually increasing, averaging around 1–5% annually. Contrary to expectations, the onset of COVID-19 in 2020 did not reduce income growth — the Dutch government's NOW-regeling wage subsidy scheme cushioned the impact on household incomes. More striking is the sharp post-COVID acceleration, with growth rates nearly doubling from ~5% in 2020 to ~10% by 2024, likely driven by inflation compensation and a tight labour market particularly benefiting higher-educated workers. Also to note that this is an association, not a causal claim — the upward trend in income growth began before 2020, suggesting broader structural factors beyond COVID are at play.
 
 # Part 4 - Discussion
 
