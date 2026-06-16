@@ -93,7 +93,7 @@ data.onderwijs <- read.csv("data/onderwijs.csv")
 
 ## 2.2 Short summary of the dataset(s)
 ```{r}
-head(data.onderwijs)
+head(data.onderwijs.raw)
 ```
 
 ### Dataset 1: Educational Attainment (85525NED)
@@ -106,7 +106,7 @@ Key variables include:
 For this project, the share of highly educated people is the most relevant variable, as it can be compared with regional income levels. A limitation of the dataset is that it contains aggregated regional statistics rather than individual-level data, so relationships observed across regions may not necessarily apply to individuals.
 
 ```{r}
-head(data.inkomen)
+head(data.inkomen.raw)
 ```
 
 ### Dataset 2: Personal Income (86162NED)
