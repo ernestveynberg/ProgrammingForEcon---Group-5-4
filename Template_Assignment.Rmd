@@ -5,6 +5,7 @@ date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
+
 # Set-up your environment
 
 ```{r package_install, include=FALSE}
@@ -14,7 +15,7 @@ install.packages("rmarkdown")
 install.packages("cbsodataR")
 install.packages("ggrepel")
 install.packages("gganimate")
-install.packages("gifski")
+install.packages("transformr")
 install.packages(c(
   "tidyverse",
   "ggplot2",
@@ -43,6 +44,7 @@ library(rnaturalearthdata)
 library(sf)
 library(ggrepel)
 library(gganimate)
+library(transformr)
 ```
 
 # Title Page
@@ -53,9 +55,10 @@ Sofiia
 Victoria
 Yurii
 
-Include the tutorial group number 
+tutorial group number:
+5.4
 
-Include your tutorial lecturer's name
+tutorial lecturer's name
 
 Simon Loop
 
@@ -329,15 +332,20 @@ library(ggrepel)
 
 ggplot(map_data) +
   geom_sf(aes(fill = mean_high_edu), colour = "white", linewidth = 0.5) +
-  scale_fill_viridis_c(
-    name      = "Higher education\nshare (%)",
-    option    = "plasma",
-    direction = -1
+  scale_fill_gradient(
+    name = "Higher education\nshare (%)",
+    low  = "#deebf7",
+    high = "#08306b"
   ) +
   geom_sf_text(aes(label = statnaam),
-               size     = 2.5,
-               colour   = "white",
-               fontface = "bold") +
+             size     = 2.5,
+             colour   = "black",
+             fontface = "bold") +
+geom_sf_text(data = map_data %>% filter(statnaam %in% c("Utrecht")),
+             aes(label = statnaam),
+             size     = 2.5,
+             colour   = "white",
+             fontface = "bold") +
   labs(
     title   = "Average higher education share by Dutch province, 2013–2024",
     caption = "Source: Statistics Netherlands (CBS). Boundary: CBS/cartomap 2024."
@@ -350,30 +358,6 @@ ggplot(map_data) +
 ```
 The map reveals a clear urban-rural divide in higher education across Dutch provinces. Utrecht (~45%) and Noord-Holland (~41%) stand out as the most highly educated, reflecting the concentration of universities and knowledge-intensive industries in the Randstad. In contrast, peripheral provinces like Zeeland (~22%), Fryslân (~24%) and Drenthe (~24%) have the lowest shares. Groningen is a notable exception among northern provinces, likely due to its large university.
 Provinces with higher education shares generally also have higher average incomes, suggesting education partly drives regional income differences. However, Zeeland — the least educated province — records the highest average income (~€14k), indicating that education alone does not fully explain provincial income variation.
-
-
-
-```{r}
-ggplot(province_2024,
-       aes(x = lon,
-           y = lat,
-           size = income_gap,
-           colour = income_gap,
-           label = province)) +
-  geom_point(alpha = 0.8) +
-  geom_text(vjust = -1, size = 3) +
-  scale_size_continuous(name = "Income gap") +
-  scale_colour_continuous(name = "Income gap") +
-  labs(
-    title = "Income inequality by Dutch province in 2024",
-    subtitle = "Bubble size and colour represent income gap",
-    x = "Longitude",
-    y = "Latitude",
-    caption = "Source: CBS. Bubbles placed at approximate province centroids."
-  )
-```
-
-This bubble map shows spatial variation in income inequality across Dutch provinces in 2024. Larger and darker bubbles indicate a larger gap between average and median income. The map is based on approximate province centroids rather than full province boundaries, so it should be interpreted as a spatial comparison rather than a precise choropleth map.
 
 ## 3.5 Visualize sub-population variation
 
@@ -465,11 +449,44 @@ ggplot(event_data_growth, aes(x = year, y = income_growth)) +
 ```
 Prior to COVID-19, income growth was modest and gradually increasing, averaging around 1–5% annually. Contrary to expectations, the onset of COVID-19 in 2020 did not reduce income growth — the Dutch government's NOW-regeling wage subsidy scheme cushioned the impact on household incomes. More striking is the sharp post-COVID acceleration, with growth rates nearly doubling from ~5% in 2020 to ~10% by 2024, likely driven by inflation compensation and a tight labour market particularly benefiting higher-educated workers. Also to note that this is an association, not a causal claim — the upward trend in income growth began before 2020, suggesting broader structural factors beyond COVID are at play.
 
+```{r}
+library(tidyverse)
+library(gganimate)
+
+bubble_data_years <- data.combined %>%
+  filter(substr(RegioS, 1, 2) == "PV") %>%
+  left_join(prov_lookup, by = "RegioS") %>%
+  filter(year %in% c(2013, 2016, 2019, 2022, 2024))
+
+ggplot(bubble_data_years, aes(x = high_education_share,
+                               y = GemiddeldPersoonlijkInkomen_6,
+                               size = high_education_share,
+                               colour = statnaam)) +
+  geom_point(alpha = 0.7) +
+  geom_text(aes(label = statnaam),
+            size = 2.5, vjust = -1.2, show.legend = FALSE) +
+  scale_size(range = c(3, 10), guide = "none") +
+  facet_wrap(~year, nrow = 1) +
+  labs(
+    title   = "Education share vs average income by province over time",
+    x       = "Higher education share (%)",
+    y       = "Average income (×1000 €)",
+    colour  = "Province",
+    caption = "Source: Statistics Netherlands (CBS)."
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(size = 7))
+```
+
+```
+
 # Part 4 - Discussion
 
 ## 4.1 Discuss your findings
 
 # Part 5 - Reproducibility
+
 
 ## 5.1 Github repository link
 
