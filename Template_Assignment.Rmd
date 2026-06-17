@@ -1,5 +1,5 @@
 ---
-title: "Group_5.4_Social_Problem_Report"
+title: "Group 5.4 Social Problem Report"
 author: "Diana Zhdanova, Ernest Veinberg, Sofiia Tataryn, Victoria Țîbuleac, Yurii Kashubin"
 date: "`r Sys.Date()`"
 output: pdf_document
@@ -40,7 +40,7 @@ library(sf)
 
 Diana Zhdanova - 2892538
 Ernest Veinberg - 
-Sofiia Tataryn - 
+Sofiia Tataryn - 2890516
 Victoria Țîbuleac - 
 Yurii Kashubin - 
 
@@ -52,7 +52,7 @@ Tutorial lecturer's name: Simon Loop
 
 ## 1.1 Describe the Social Problem
 Income inequality remains an important socioeconomic issue in the Netherlands because differences in income affect living standards, health outcomes, and economic opportunities. Understanding the factors associated with income differences is therefore relevant for policymakers seeking to promote equal opportunities across regions.
-One of the most important factors associated with income is educational attainment. According to human capital theory, education increases workers’ skills and productivity, which can lead to higher earnings (Boissière et al., 2007). However, regional factors such as labour market conditions and economic development may also influence income levels.
+One of the most important factors associated with income is educational attainment. According to human capital theory, education increases workers’ skills and productivity, which can lead to higher earnings Becker, G. S. (1964). However, regional factors such as labour market conditions and economic development may also influence income levels.
 Previous research suggests that the relationship between education and income inequality is not always straightforward. Földvári and Van Leeuwen (2011) find that educational inequality alone does not fully explain income inequality, indicating that other factors also play a role.
 In this report, we use Statistics Netherlands (CBS) data to examine the relationship between education, region, and income in the Netherlands between 2013 and 2024. We analyse how educational attainment and income vary across regions and whether higher education levels are associated with higher incomes.
 
@@ -283,12 +283,15 @@ event analysis to detect whether income growth accelerated or slowed around COVI
 
 ```{r gen_variables}
 data.combined <- data.combined %>%
+  arrange(RegioS, Perioden) %>%
+  group_by(RegioS) %>%
   mutate(
     high_education_share = k_3HboWo_4 + k_32HboWoMasterDoctor_9,
     mid_education_share  = k_2HavoVwoMbo24_3,
-    income_growth         = GemiddeldPersoonlijkInkomen_6 / 
-                           mean(GemiddeldPersoonlijkInkomen_6, na.rm = TRUE) * 100
-  )
+    income_growth = (GemiddeldPersoonlijkInkomen_6 - lag(GemiddeldPersoonlijkInkomen_6)) /
+                     lag(GemiddeldPersoonlijkInkomen_6) * 100
+  ) %>%
+  ungroup()
 
 ```
 
@@ -339,9 +342,19 @@ using `statnaam` (province name) as the join key, after first matching CBS regio
 to province names via `prov_lookup`.
 
 ```{r}
+prov_lookup <- tibble(
+  RegioS   = c("PV20","PV21","PV22","PV23","PV24","PV25",
+               "PV26","PV27","PV28","PV29","PV30","PV31"),
+  statnaam = c("Groningen","Fryslân","Drenthe","Overijssel","Flevoland",
+               "Gelderland","Utrecht","Noord-Holland","Zuid-Holland",
+               "Zeeland","Noord-Brabant","Limburg")
+)
+provinces_sf <- st_read("https://cartomap.github.io/nl/wgs84/provincie_2024.geojson")
+
 map_data <- provinces_sf %>%
   left_join(
-    data.provinces %>%
+    data.combined %>%
+      filter(substr(RegioS, 1, 2) == "PV") %>%
       left_join(prov_lookup, by = "RegioS") %>%
       group_by(statnaam) %>%
       summarise(
@@ -350,7 +363,6 @@ map_data <- provinces_sf %>%
       ),
     by = "statnaam"
   )
-
 ```
 
 ## 3.4 Visualize spatial variation
@@ -483,7 +495,7 @@ Prior to COVID-19, income growth was modest and gradually increasing, averaging 
 Combining the four visualisations provides a coherent picture of income and education in the Netherlands:
 
 First, both income levels and educational attainment increased over time. Second, strong geographical differences exist, with provinces in and around the Randstad generally displaying higher education levels than more peripheral regions. Third, differences between educational sub-populations indicate that variation in higher education attainment is much larger than variation in mid-level education. Finally, while income growth accelerated after the COVID-19 period, the data do not allow causal conclusions regarding the effect of the pandemic itself.
-Taken together, the results suggest that educational attainment is positively associated with income outcomes and that regional differences in education may contribute to broader patterns of economic inequality within the Netherlands. But ecause the analysis uses aggregated regional data, the observed associations cannot be interpreted as individual-level causal effects.
+Taken together, the results suggest that educational attainment is positively associated with income outcomes and that regional differences in education may contribute to broader patterns of economic inequality within the Netherlands. But because the analysis uses aggregated regional data, the observed associations cannot be interpreted as individual-level causal effects.
 
 # Part 5 - Reproducibility
 ## 5.1 Github repository link
@@ -494,7 +506,7 @@ Taken together, the results suggest that educational attainment is positively as
 
 The complete project, including all code, documentation, and generated figures, is available at:
 
-https://github.com/ernestveynberg/ProgrammingForEcon---Group-5-4
+<https://github.com/ernestveynberg/ProgrammingForEcon---Group-5-4>
 
 ## How this project is reproduced
 
@@ -515,7 +527,8 @@ Running the R Markdown file will automatically perform the data cleaning, mergin
 
 Földvári, P., & van Leeuwen, B. (2011). Should less inequality in education lead to a more equal income distribution? Education Economics, 19(5), 537–554. https://doi.org/10.1080/09645292.2010.488472
 
-Author, A. A. (2007). Basic schooling model. In Human Capital: Advances in Theory and Evidence (pp. 7–20). Cambridge University Press.
+Becker, G. S. (1964). Human Capital: A Theoretical and Empirical Analysis, with Special 
+Reference to Education. University of Chicago Press
 
 
 
