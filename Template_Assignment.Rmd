@@ -70,7 +70,7 @@ Dataset source:
 
 - [CBS Dataset 85525NED – Educational attainment by region](https://opendata.cbs.nl/#/CBS/nl/dataset/85525NED/table)
 
-```{r loading_data
+```{r loading_data}
 
 #onderwijs <- cbs_get_data("85525NED")
 #inkomen <- cbs_get_data("86162NED")
