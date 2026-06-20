@@ -39,10 +39,10 @@ library(sf)
 # Title Page
 
 Diana Zhdanova - 2892538
-Ernest Veinberg - 
+Ernest Veinberg - 2876689
 Sofiia Tataryn - 2890516
-Victoria Țîbuleac - 
-Yurii Kashubin - 
+Victoria Țîbuleac - 2907700
+Yurii Kashubin - 2876538
 
 Tutorial group number: 5.4
 
@@ -499,10 +499,6 @@ Taken together, the results suggest that educational attainment is positively as
 
 # Part 5 - Reproducibility
 ## 5.1 Github repository link
-
-# Part 5 – Reproducibility
-
-## GitHub repository link
 
 The complete project, including all code, documentation, and generated figures, is available at:
 
