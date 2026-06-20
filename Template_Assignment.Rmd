@@ -39,9 +39,13 @@ library(sf)
 # Title Page
 
 Diana Zhdanova - 2892538
+
 Ernest Veinberg - 2876689
+
 Sofiia Tataryn - 2890516
+
 Victoria Țîbuleac - 2907700
+
 Yurii Kashubin - 2876538
 
 Tutorial group number: 5.4
@@ -66,16 +70,9 @@ Dataset source:
 
 - [CBS Dataset 85525NED – Educational attainment by region](https://opendata.cbs.nl/#/CBS/nl/dataset/85525NED/table)
 
-```{r loading_data}
-
-#onderwijs <- cbs_get_data("85525NED")
-#inkomen <- cbs_get_data("86162NED")
-
-#write_csv(onderwijs, "data/onderwijs.csv")
-#write_csv(inkomen, "data/inkomen.csv")
-
-data.inkomen <- read.csv("data/inkomen.csv")
-data.onderwijs <- read.csv("data/onderwijs.csv")
+```library(cbsodataR)
+data.inkomen <- cbs_get_data("86162NED")
+data.onderwijs <- cbs_get_data("85525NED")
 
 ```
 
